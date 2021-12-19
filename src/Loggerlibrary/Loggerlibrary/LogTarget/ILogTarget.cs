@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Loggerlibrary.LogTarget
 {
     public interface ILogTarget
     {
-        void Write(Model.Log log);
+        Task Write(Model.LogModel log);
+        Task WriteAll(IEnumerable<Model.LogModel> log);
     }
 }

@@ -7,19 +7,18 @@ using System.Threading.Tasks;
 
 namespace Loggerlibrary
 {
-    public class Logger : ILogger
+    public class LoggerAsync : ILogger
     {
         public LogLevel DefaultLevel = LogLevel.info;
         private ILogTarget logTarget;
-        public Logger(ILogTarget logTarget)
+        public LoggerAsync(ILogTarget logTarget)
         {
             this.logTarget = logTarget;
         }
-            
-        public Task WriteLog(string msg , Model.LogLevel? level = null)
-        {
-            logTarget.Write(new Model.LogModel() { Msg = msg, Level= level ?? DefaultLevel }).Wait();
-            return Task.CompletedTask;
+
+        public async Task WriteLog(string msg, Model.LogLevel? level = null)
+        {                    
+            await logTarget.Write(new Model.LogModel() { Msg = msg, Level = level ?? DefaultLevel });
         }
     }
 }

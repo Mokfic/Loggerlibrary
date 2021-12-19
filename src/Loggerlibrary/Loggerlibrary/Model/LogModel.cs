@@ -4,15 +4,11 @@ using System.Text;
 
 namespace Loggerlibrary.Model
 {
-    public class Log
+    public class LogModel
     {
+        public DateTime Time { get; set; } = DateTime.Now;
         public string Msg { get; set; }
-
         public LogLevel Level {get;set;}
 
-        public override string ToString()
-        {
-            return $"[{Level}] {Msg}";
-        }
     }
 }
