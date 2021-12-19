@@ -16,8 +16,8 @@ namespace LoggerDemo
             .ConfigureServices(
             (_, services) => services
                 .AddTransient<Loggerlibrary.IConfiguration, Configuration>()
-                .AddTransient<Loggerlibrary.ILogger, Loggerlibrary.LoggerQueue>()
-                .AddTransient<Loggerlibrary.LogTarget.ILogTarget, Loggerlibrary.LogTarget.LogTargetFile>()
+                .AddTransient<Loggerlibrary.ILogger, Loggerlibrary.LoggerAsync>()
+                .AddTransient<Loggerlibrary.LogTarget.ILogTarget, Loggerlibrary.LogTarget.LogTargetConsole>()
             ).Build();
 
             return host;
@@ -34,22 +34,24 @@ namespace LoggerDemo
 
             var stopw = Stopwatch.StartNew();
 
+        
             logger.WriteLog("0 Hello árvíztűrő tükörfúrógép -----------------------");
             logger.WriteLog("1 Hello info", LogLevel.info);
             logger.WriteLog("2 Hello debug", LogLevel.debug);
             logger.WriteLog("3 Hello error", LogLevel.error);
 
-            Task t = Task.Factory.StartNew( async () =>
+            //backround task for demo
+            Task t = Task.Factory.StartNew<Task>( async () =>
                {
-                   await logger.WriteLog("1 Hello info await", LogLevel.info);
-                   await logger.WriteLog("2 Hello info await", LogLevel.debug);
-                   await logger.WriteLog("3 Hello info await", LogLevel.info);
-                   await logger.WriteLog("4 Hello info await", LogLevel.info);
-                   await logger.WriteLog("5 Hello info await", LogLevel.debug);
-                   await logger.WriteLog("6 Hello info await", LogLevel.info);
+
+                   for (int i = 0; i < 100; i++)
+                   {
+                       await logger.WriteLog($"{i} Hello info await",i%5==0?LogLevel.debug:LogLevel.info);
+                       await Task.Delay(100);
+                   }
 
                });
-            t.Wait();
+         
             stopw.Stop();
 
             Console.WriteLine($"--------end ----- {stopw.ElapsedMilliseconds} ms");

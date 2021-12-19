@@ -37,7 +37,10 @@ namespace Loggerlibrary
             return Task.CompletedTask;
         }
 
-
+        /// <summary>
+        /// Peridocialy removea log items from queue to write 
+        /// </summary>
+        /// <param name="tag"></param>
         void onWriteTimer(object tag)
         {
             if (!Buffer.IsEmpty)

@@ -11,12 +11,19 @@ namespace Loggerlibrary.LogTarget
     public class LogTargetConsole : ILogTarget
     {
         object _sync = new object();
+        
+        /// <summary>
+        /// console wait max time is 1 sec
+        /// </summary>
+        private const int MAX_WAIT = 1000;
 
         public Task Write(LogModel log)
         {
             Task t = Task.Factory.StartNew(() =>
             {
-                if (!Monitor.TryEnter(_sync,1000)) return;
+                //if expires timeout, then cancels the write
+                if (!Monitor.TryEnter(_sync, MAX_WAIT)) 
+                    return;
                 AddToConsole(log);
                 Monitor.Exit(_sync);
             });
@@ -28,7 +35,7 @@ namespace Loggerlibrary.LogTarget
         {
             Task t = Task.Factory.StartNew(() =>
             {
-                if (!Monitor.TryEnter(_sync, 1000)) return;
+                if (!Monitor.TryEnter(_sync, MAX_WAIT)) return;
 
                 foreach (var l in log)
                 {

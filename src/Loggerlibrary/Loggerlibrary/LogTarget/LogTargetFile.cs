@@ -6,53 +6,84 @@ using System.Text;
 using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Linq;
 
 namespace Loggerlibrary.LogTarget
 {
     public class LogTargetFile : ILogTarget
     {
-        object _sync = new object();
+        private object _sync = new object();
 
         private IConfiguration configuration;
+
+        private const int MAX_WAIT = 10000;
         public LogTargetFile(IConfiguration configuration)
         {
             this.configuration = configuration;
         }
 
-        protected string GetFileName()
-        {
-            var filename = "log1.txt";
-
-            var filepath = Path.Combine(configuration.LoggerDir, filename);
-            return filepath;
-        }
-            
 
         public Task Write(LogModel log)
         {
 
-            UTF8Encoding uniencoding = new UTF8Encoding();
+            UTF8Encoding utfencoding = new UTF8Encoding();
             string filename = GetFileName();
 
-            byte[] result = uniencoding.GetBytes(log.ToText());
+            byte[] result = utfencoding.GetBytes(log.ToText());
 
             return WriteFile(filename, result);
         }
 
-        protected Task WriteFile(string filename,  byte[] data)
+        /// <summary>
+        /// Mass write, faster than one by one
+        /// </summary>
+        /// <param name="log"></param>
+        /// <returns></returns>
+        public Task WriteAll(IEnumerable<LogModel> log)
+        {
+            UTF8Encoding utfencoding = new UTF8Encoding();
+            string filename = GetFileName();
+
+            StringBuilder sb = new StringBuilder();
+            foreach (var l in log)
+            {
+                sb.Append(l.ToText());
+            }
+
+            byte[] logtextbytes = utfencoding.GetBytes(sb.ToString());
+
+            return WriteFile(filename, logtextbytes);
+        }
+
+        /// <summary>
+        /// Writes bytes to file, in background, then release file handle
+        /// </summary>
+        /// <param name="filename"></param>
+        /// <param name="data"></param>
+        /// <returns></returns>
+        protected Task WriteFile(string filename, byte[] data)
         {
             Task writetask = Task.Factory.StartNew(() =>
             {
-                if (!Monitor.TryEnter(_sync, 10000))
-                    return;
+                if (!Monitor.TryEnter(_sync, MAX_WAIT))
+                {
+                    throw new Exception("File access error");
+                }
 
                 try
-                {              
+                {
 
-                    using FileStream SourceStream = File.Open(filename, FileMode.OpenOrCreate);
-                    SourceStream.Seek(0, SeekOrigin.End);
-                    SourceStream.Write(data, 0, data.Length);
-                    SourceStream.Close();
+                    using FileStream filestream = File.Open(filename, FileMode.OpenOrCreate);
+                    filestream.Seek(0, SeekOrigin.End);
+                    filestream.Write(data, 0, data.Length);
+
+                    //check: if file is full, create new empty
+                    if (filestream.Length > configuration.MaxFileSize)
+                    {
+                        using (File.Create(GetFileName(true))) { }
+                    }
+
+                    filestream.Close();
                 }
                 finally
                 {
@@ -64,20 +95,45 @@ namespace Loggerlibrary.LogTarget
             return writetask;
         }
 
-        public Task WriteAll(IEnumerable<LogModel> log)
-        {
-            UTF8Encoding uniencoding = new UTF8Encoding();
-            string filename = GetFileName();
 
-            StringBuilder sb = new StringBuilder();
-            foreach (var l in log)
+        /// <summary>
+        /// Return tha latest logfile name, or the next file name
+        /// </summary>
+        /// <param name="newFile">to get the next</param>
+        /// <returns></returns>
+        protected string GetFileName(bool newFile = false)
+        {
+            const int FIELDCOUNT = 2;
+            const int COUNTER_INDEX = 1;
+            const int PREFIX_INDEX = 0;
+
+            var files = Directory.GetFiles(configuration.LoggerDir);
+            int lognum = 0;
+
+            //only txt files
+            foreach (var file in files.ToList().Where(f => f.EndsWith(".txt")))
             {
-                sb.Append(l.ToText());
+                //filename fields separated by .
+                var fields = Path.GetFileName(file).Split('.');
+
+                //parse only log files, and get the number
+                if ((fields.Length > FIELDCOUNT) && (fields[PREFIX_INDEX] == "log"))
+                {
+                    if (int.TryParse(fields[COUNTER_INDEX], out int intv))
+                    {
+                        //find the latest number
+                        lognum = Math.Max(lognum, intv);
+                    }
+                }
             }
 
-            byte[] logtextbytes = uniencoding.GetBytes(sb.ToString());
+            if (newFile) lognum++;
+            
+            var filename = lognum > 0 ? $"log.{lognum}.txt" : "log.txt";
 
-            return WriteFile(filename, logtextbytes);
+            var filepath = Path.Combine(configuration.LoggerDir, filename);
+            return filepath;
         }
+
     }
 }
