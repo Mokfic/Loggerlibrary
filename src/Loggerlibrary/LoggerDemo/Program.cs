@@ -9,7 +9,10 @@ namespace LoggerDemo
 {
     class Program
     {
-
+        /// <summary>
+        /// DI Config
+        /// </summary>
+        /// <returns></returns>
         static IHost Configuration()
         {
             IHost host = Host.CreateDefaultBuilder()
@@ -30,10 +33,11 @@ namespace LoggerDemo
 
             Console.WriteLine("Hello from logger demo");
 
+            //Get logger instance from DI
             var logger = host.Services.GetRequiredService<Loggerlibrary.ILogger>();
 
-            var stopw = Stopwatch.StartNew();
 
+            var stopw = Stopwatch.StartNew();
         
             logger.WriteLog("0 Hello árvíztűrő tükörfúrógép -----------------------");
             logger.WriteLog("1 Hello info", LogLevel.info);

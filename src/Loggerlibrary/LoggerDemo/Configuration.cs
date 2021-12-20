@@ -5,10 +5,13 @@ using System.Text;
 
 namespace LoggerDemo
 {
+    /// <summary>
+    /// Demo config 
+    /// </summary>
     public class Configuration : IConfiguration
     {
         /// <summary>
-        /// where creates log files
+        /// where creates log files: App folder
         /// </summary>
         public string LoggerDir { get => AppContext.BaseDirectory; }
 
@@ -19,6 +22,7 @@ namespace LoggerDemo
 
         /// <summary>
         /// Writes data from buffer to target if zero, then disabled 
+        /// One sec timer.
         /// </summary>
         public int QueueTimerPeriodMs { get => 1000; }
         
