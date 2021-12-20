@@ -12,24 +12,24 @@ namespace Loggerlibrary.LogTarget
 {
     public class LogTargetFile : ILogTarget
     {
-        private object _sync = new object();
+        private readonly object _sync = new object();
 
-        private IConfiguration configuration;
+        private readonly IConfiguration _configuration;
 
-        private const int MAX_WAIT = 10000;
+        private const int MaxWait = 10000;
         public LogTargetFile(IConfiguration configuration)
         {
-            this.configuration = configuration;
+            this._configuration = configuration;
         }
 
 
         public Task Write(LogModel log)
         {
 
-            UTF8Encoding utfencoding = new UTF8Encoding();
+            UTF8Encoding utfEncoding = new UTF8Encoding();
             string filename = GetFileName();
 
-            byte[] result = utfencoding.GetBytes(log.ToText());
+            byte[] result = utfEncoding.GetBytes(log.ToText());
 
             return WriteFile(filename, result);
         }
@@ -41,7 +41,7 @@ namespace Loggerlibrary.LogTarget
         /// <returns></returns>
         public Task WriteAll(IEnumerable<LogModel> log)
         {
-            UTF8Encoding utfencoding = new UTF8Encoding();
+            UTF8Encoding utfEncoding = new UTF8Encoding();
             string filename = GetFileName();
 
             StringBuilder sb = new StringBuilder();
@@ -50,9 +50,9 @@ namespace Loggerlibrary.LogTarget
                 sb.Append(l.ToText());
             }
 
-            byte[] logtextbytes = utfencoding.GetBytes(sb.ToString());
+            byte[] logTextBytes = utfEncoding.GetBytes(sb.ToString());
 
-            return WriteFile(filename, logtextbytes);
+            return WriteFile(filename, logTextBytes);
         }
 
         /// <summary>
@@ -63,9 +63,9 @@ namespace Loggerlibrary.LogTarget
         /// <returns></returns>
         protected Task WriteFile(string filename, byte[] data)
         {
-            Task writetask = Task.Factory.StartNew(() =>
+            Task writeTask = Task.Factory.StartNew(() =>
             {
-                if (!Monitor.TryEnter(_sync, MAX_WAIT))
+                if (!Monitor.TryEnter(_sync, MaxWait))
                 {
                     throw new Exception("File access error");
                 }
@@ -73,17 +73,17 @@ namespace Loggerlibrary.LogTarget
                 try
                 {
 
-                    using FileStream filestream = File.Open(filename, FileMode.OpenOrCreate);
-                    filestream.Seek(0, SeekOrigin.End);
-                    filestream.Write(data, 0, data.Length);
+                    using FileStream fileStream = File.Open(filename, FileMode.OpenOrCreate);
+                    fileStream.Seek(0, SeekOrigin.End);
+                    fileStream.Write(data, 0, data.Length);
 
                     //check: if file is full, create new empty
-                    if (filestream.Length > configuration.MaxFileSize)
+                    if (fileStream.Length > _configuration.MaxFileSize)
                     {
                         using (File.Create(GetFileName(true))) { }
                     }
 
-                    filestream.Close();
+                    fileStream.Close();
                 }
                 finally
                 {
@@ -92,7 +92,7 @@ namespace Loggerlibrary.LogTarget
 
             });
 
-            return writetask;
+            return writeTask;
         }
 
 
@@ -103,12 +103,12 @@ namespace Loggerlibrary.LogTarget
         /// <returns></returns>
         protected string GetFileName(bool newFile = false)
         {
-            const int FIELDCOUNT = 2;
-            const int COUNTER_INDEX = 1;
-            const int PREFIX_INDEX = 0;
+            const int fieldCount = 2;
+            const int counterIndex = 1;
+            const int prefixIndex = 0;
 
-            var files = Directory.GetFiles(configuration.LoggerDir);
-            int lognum = 0;
+            var files = Directory.GetFiles(_configuration.LoggerDir);
+            int logFileIndex = 0;
 
             //only txt files
             foreach (var file in files.ToList().Where(f => f.EndsWith(".txt")))
@@ -117,21 +117,21 @@ namespace Loggerlibrary.LogTarget
                 var fields = Path.GetFileName(file).Split('.');
 
                 //parse only log files, and get the number
-                if ((fields.Length > FIELDCOUNT) && (fields[PREFIX_INDEX] == "log"))
+                if ((fields.Length > fieldCount) && (fields[prefixIndex] == "log"))
                 {
-                    if (int.TryParse(fields[COUNTER_INDEX], out int intv))
+                    if (int.TryParse(fields[counterIndex], out int intValue))
                     {
                         //find the latest number
-                        lognum = Math.Max(lognum, intv);
+                        logFileIndex = Math.Max(logFileIndex, intValue);
                     }
                 }
             }
 
-            if (newFile) lognum++;
+            if (newFile) logFileIndex++;
             
-            var filename = lognum > 0 ? $"log.{lognum}.txt" : "log.txt";
+            var filename = logFileIndex > 0 ? $"log.{logFileIndex}.txt" : "log.txt";
 
-            var filepath = Path.Combine(configuration.LoggerDir, filename);
+            var filepath = Path.Combine(_configuration.LoggerDir, filename);
             return filepath;
         }
 

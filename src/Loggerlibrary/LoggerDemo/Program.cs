@@ -37,28 +37,28 @@ namespace LoggerDemo
             var logger = host.Services.GetRequiredService<Loggerlibrary.ILogger>();
 
 
-            var stopw = Stopwatch.StartNew();
+            var stopWatch = Stopwatch.StartNew();
         
             logger.WriteLog("0 Hello árvíztűrő tükörfúrógép -----------------------");
-            logger.WriteLog("1 Hello info", LogLevel.info);
-            logger.WriteLog("2 Hello debug", LogLevel.debug);
-            logger.WriteLog("3 Hello error", LogLevel.error);
+            logger.WriteLog("1 Hello info", LogLevel.Info);
+            logger.WriteLog("2 Hello debug", LogLevel.Debug);
+            logger.WriteLog("3 Hello error", LogLevel.Error);
 
-            //backround task for demo
-            Task t = Task.Factory.StartNew<Task>( async () =>
+            //background task for demo
+            Task t = Task.Factory.StartNew( async () =>
                {
 
                    for (int i = 0; i < 100; i++)
                    {
-                       await logger.WriteLog($"{i} Hello info await",i%5==0?LogLevel.debug:LogLevel.info);
+                       await logger.WriteLog($"{i} Hello info await",i%5==0?LogLevel.Debug:LogLevel.Info);
                        await Task.Delay(100);
                    }
 
                });
          
-            stopw.Stop();
+            stopWatch.Stop();
 
-            Console.WriteLine($"--------end ----- {stopw.ElapsedMilliseconds} ms");
+            Console.WriteLine($"--------end ----- {stopWatch.ElapsedMilliseconds} ms");
             Console.ReadKey();
 
         }

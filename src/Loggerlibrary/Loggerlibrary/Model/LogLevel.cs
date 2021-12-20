@@ -1,4 +1,4 @@
 ﻿namespace Loggerlibrary.Model
 {
-    public enum LogLevel {debug, info, error};
+    public enum LogLevel {Debug, Info, Error};
 }

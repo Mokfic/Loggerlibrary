@@ -1,28 +1,26 @@
 ﻿using Loggerlibrary.LogTarget;
 using Loggerlibrary.Model;
-using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Loggerlibrary
 {
     public class LoggerQueue : ILogger
     {
-        public LogLevel DefaultLevel = LogLevel.info;
+        public LogLevel DefaultLevel = LogLevel.Info;
         protected ConcurrentQueue<LogModel> Buffer = new ConcurrentQueue<LogModel>();
-        private ILogTarget logTarget;
-        private IConfiguration configuration;
-        private System.Threading.Timer writeTimer;
+        private readonly ILogTarget _logTarget;
+        private readonly IConfiguration _configuration;
+        private System.Threading.Timer _writeTimer;
 
         public LoggerQueue(ILogTarget logTarget, IConfiguration configuration)
         {
-            this.logTarget = logTarget;
-            this.configuration = configuration;
+            this._logTarget = logTarget;
+            this._configuration = configuration;
 
             if (configuration.QueueTimerPeriodMs > 0)
-                writeTimer = new System.Threading.Timer(onWriteTimer, null, configuration.QueueTimerPeriodMs,0 );
+                _writeTimer = new System.Threading.Timer(OnWriteTimer, null, configuration.QueueTimerPeriodMs,0 );
         }
 
         /// <summary>
@@ -31,34 +29,34 @@ namespace Loggerlibrary
         /// <param name="msg">log model</param>
         /// <param name="level">log level</param>
         /// <returns></returns>
-        public Task WriteLog(string msg, Model.LogLevel? level = null)
+        public Task WriteLog(string msg, LogLevel? level = null)
         {
-            Buffer.Enqueue(new Model.LogModel() { Msg = msg, Level = level ?? DefaultLevel });
+            Buffer.Enqueue(new LogModel() { Msg = msg, Level = level ?? DefaultLevel });
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Peridocialy removea log items from queue to write 
+        /// Periodically remove log items from queue to write 
         /// </summary>
         /// <param name="tag"></param>
-        void onWriteTimer(object tag)
+        void OnWriteTimer(object tag)
         {
             if (!Buffer.IsEmpty)
             {
 
-                //removes item from quea and add to wire list
-                List<LogModel> modelstowrite = new List<LogModel>();
+                //removes item from queue and add to wire list
+                List<LogModel> modelsToWrite = new List<LogModel>();
                 while (Buffer.TryDequeue(out LogModel log))
                 {
-                    modelstowrite.Add(log);
+                    modelsToWrite.Add(log);
                 }
 
                 //doing the mass write
-                logTarget.WriteAll(modelstowrite).Wait();
+                _logTarget.WriteAll(modelsToWrite).Wait();
             }
 
             //only just now restart the timer
-            writeTimer = new System.Threading.Timer(onWriteTimer, null, configuration.QueueTimerPeriodMs, 0);
+            _writeTimer = new System.Threading.Timer(OnWriteTimer, null, _configuration.QueueTimerPeriodMs, 0);
         }
     }
 }

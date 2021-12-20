@@ -1,7 +1,5 @@
 ﻿using Loggerlibrary;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace LoggerDemo
 {
@@ -13,18 +11,17 @@ namespace LoggerDemo
         /// <summary>
         /// where creates log files: App folder
         /// </summary>
-        public string LoggerDir { get => AppContext.BaseDirectory; }
+        public string LoggerDir => AppContext.BaseDirectory;
 
         /// <summary>
         /// 5K 
         /// </summary>
-        public long MaxFileSize { get => 1024*5; }
+        public long MaxFileSize => 1024*5;
 
         /// <summary>
         /// Writes data from buffer to target if zero, then disabled 
         /// One sec timer.
         /// </summary>
-        public int QueueTimerPeriodMs { get => 1000; }
-        
+        public int QueueTimerPeriodMs => 1000;
     }
 }

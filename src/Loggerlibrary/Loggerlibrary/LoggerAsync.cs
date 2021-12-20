@@ -1,24 +1,21 @@
 ﻿using Loggerlibrary.LogTarget;
 using Loggerlibrary.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Loggerlibrary
 {
     public class LoggerAsync : ILogger
     {
-        public LogLevel DefaultLevel = LogLevel.info;
-        private ILogTarget logTarget;
+        public LogLevel DefaultLevel = LogLevel.Info;
+        private readonly ILogTarget _logTarget;
         public LoggerAsync(ILogTarget logTarget)
         {
-            this.logTarget = logTarget;
+            this._logTarget = logTarget;
         }
 
-        public async Task WriteLog(string msg, Model.LogLevel? level = null)
+        public async Task WriteLog(string msg, LogLevel? level = null)
         {                    
-            await logTarget.Write(new Model.LogModel() { Msg = msg, Level = level ?? DefaultLevel });
+            await _logTarget.Write(new LogModel() { Msg = msg, Level = level ?? DefaultLevel });
         }
     }
 }
